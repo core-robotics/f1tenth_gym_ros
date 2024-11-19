@@ -82,6 +82,26 @@ def generate_launch_description():
         parameters=[{'robot_description': Command(['xacro ', os.path.join(get_package_share_directory('f1tenth_gym_ros'), 'launch', 'opp_racecar.xacro')])}],
         remappings=[('/robot_description', 'opp_robot_description')]
     )
+    static_transform_publishers = [
+    Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_tf_pub',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'ego_racecar/base_link']
+    ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_pub_base_to_front_left_wheel',
+            arguments=['-0.5', '0.5', '0', '0', '0', '0', 'map', 'ego_racecar/front_left_wheel']
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_pub_base_to_front_right_wheel',
+            arguments=['-0.5', '-0.5', '0', '0', '0', '0', 'map', 'ego_racecar/front_right_wheel']
+        ),
+    ]
 
     # finalize
     ld.add_action(rviz_node)
@@ -91,5 +111,7 @@ def generate_launch_description():
     ld.add_action(ego_robot_publisher)
     if has_opp:
         ld.add_action(opp_robot_publisher)
-
+    ld.add_action(static_transform_publishers[0])
+    ld.add_action(static_transform_publishers[1])
+    ld.add_action(static_transform_publishers[2])
     return ld
