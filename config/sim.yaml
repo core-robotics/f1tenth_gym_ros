@@ -41,12 +41,17 @@ bridge:
     scan_fov: 4.7
     scan_beams: 1080
 
-    # map parameters    levinelobby_track    map_trackporto    map_iccas
-    map_path: '/home/a/f1tenth_gym_ws/src/f1tenth_gym_ros/maps/levinelobby_track'
+    # map parameters
+    # Austin  berlin  levinelobby_track  porto  icra2025  iccas2024  iv2024
+    map_path: '/home/a/f1tenth_gym_ros/src/f1tenth_gym_ros/maps/icra2025/icra2025'
     map_img_ext: '.pgm'
 
+    # car parameters and scale
+    vehicle_params: 'f1tenth'
+    scale: 1.0
+
     # opponent parameters
-    num_agent: 1
+    num_agent: 2
 
     # ego starting pose on map
     sx: 0.0
@@ -59,4 +64,7 @@ bridge:
     stheta1: 0.0
 
     # teleop
-    kb_teleop: False
+    kb_teleop: True
+
+    # drive with accel or speed
+    drive_with_accel: True

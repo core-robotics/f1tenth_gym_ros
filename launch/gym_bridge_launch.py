@@ -42,7 +42,8 @@ def generate_launch_description():
         package='f1tenth_gym_ros',
         executable='gym_bridge',
         name='bridge',
-        parameters=[config]
+        parameters=[config],
+        # output='screen',
     )
     rviz_node = Node(
         package='rviz2',
@@ -50,10 +51,44 @@ def generate_launch_description():
         name='rviz',
         arguments=['-d', os.path.join(get_package_share_directory('f1tenth_gym_ros'), 'launch', 'gym_bridge.rviz')]
     )
+
+    # Create custom yaml file for map server by copying the original yaml file and scaling the resolution by the sim.yaml scale
+    with open(config_dict['bridge']['ros__parameters']['map_path'] + '.yaml', 'r') as file:
+        map_yaml = yaml.safe_load(file)
+    map_yaml['resolution'] *= config_dict['bridge']['ros__parameters']['scale']
+    origin = map_yaml['origin']
+    scaled_origin = (
+        origin[0] * config_dict['bridge']['ros__parameters']['scale'],
+        origin[1] * config_dict['bridge']['ros__parameters']['scale'],
+        origin[2],
+    )
+    map_yaml['origin'] = scaled_origin
+    map_yaml['image'] = 'scaled_map' + config_dict['bridge']['ros__parameters']['map_img_ext']
+
+    temp_yaml_path = None
+    # Create a temporary directory to store the scaled map yaml and image
+    # Create a temporary directory to store the scaled map yaml and image in the same location as the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    temp_dir = os.path.join(script_dir, 'temp')
+    os.makedirs(temp_dir, exist_ok=True)
+
+    temp_yaml_path = os.path.join(temp_dir, 'scaled_map.yaml')
+    temp_img_path = os.path.join(temp_dir, 'scaled_map' + config_dict['bridge']['ros__parameters']['map_img_ext'])
+
+    # Write the scaled map yaml to the temporary file
+    with open(temp_yaml_path, 'w') as file:
+        yaml.dump(map_yaml, file)
+
+    # Copy the map image to the temporary directory
+    map_image_path = os.path.join(config_dict['bridge']['ros__parameters']['map_path'] + config_dict['bridge']['ros__parameters']['map_img_ext'])
+    with open(temp_img_path, 'wb') as file:
+        with open(map_image_path, 'rb') as img_file:
+            file.write(img_file.read())
+
     map_server_node = Node(
         package='nav2_map_server',
         executable='map_server',
-        parameters=[{'yaml_filename': config_dict['bridge']['ros__parameters']['map_path'] + '.yaml'},
+        parameters=[{'yaml_filename': temp_yaml_path},
                     {'topic': 'map'},
                     {'frame_id': 'map'},
                     {'output': 'screen'},
@@ -68,11 +103,23 @@ def generate_launch_description():
                     {'autostart': True},
                     {'node_names': ['map_server']}]
     )
+
+
+    ego_xacro = None
+    if config_dict['bridge']['ros__parameters']['vehicle_params'] == 'f1tenth':
+        ego_xacro = "ego_racecar.xacro"
+    elif config_dict['bridge']['ros__parameters']['vehicle_params'] == 'fullscale':
+        ego_xacro = "ego_racecar_fullscale.xacro"
+    elif config_dict['bridge']['ros__parameters']['vehicle_params'] == 'f1fifth':
+        ego_xacro = "ego_racecar_f1fifth.xacro"
+    else:
+        raise ValueError('vehicle_params should be either f1tenth, fullscale, or f1fifth.')
+    
     ego_robot_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='ego_robot_state_publisher',
-        parameters=[{'robot_description': Command(['xacro ', os.path.join(get_package_share_directory('f1tenth_gym_ros'), 'launch', 'ego_racecar.xacro')])}],
+        parameters=[{'robot_description': Command(['xacro ', os.path.join(get_package_share_directory('f1tenth_gym_ros'), 'launch', ego_xacro)])}],
         remappings=[('/robot_description', 'ego_robot_description')]
     )
     opp_robot_publisher = Node(
@@ -82,26 +129,6 @@ def generate_launch_description():
         parameters=[{'robot_description': Command(['xacro ', os.path.join(get_package_share_directory('f1tenth_gym_ros'), 'launch', 'opp_racecar.xacro')])}],
         remappings=[('/robot_description', 'opp_robot_description')]
     )
-    static_transform_publishers = [
-    Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='static_tf_pub',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'ego_racecar/base_link']
-    ),
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            name='static_tf_pub_base_to_front_left_wheel',
-            arguments=['-0.5', '0.5', '0', '0', '0', '0', 'map', 'ego_racecar/front_left_wheel']
-        ),
-        Node(
-            package='tf2_ros',
-            executable='static_transform_publisher',
-            name='static_tf_pub_base_to_front_right_wheel',
-            arguments=['-0.5', '-0.5', '0', '0', '0', '0', 'map', 'ego_racecar/front_right_wheel']
-        ),
-    ]
 
     # finalize
     ld.add_action(rviz_node)
@@ -111,7 +138,5 @@ def generate_launch_description():
     ld.add_action(ego_robot_publisher)
     if has_opp:
         ld.add_action(opp_robot_publisher)
-    ld.add_action(static_transform_publishers[0])
-    ld.add_action(static_transform_publishers[1])
-    ld.add_action(static_transform_publishers[2])
+
     return ld
