@@ -14,7 +14,7 @@ sudo apt install ros-humble-nav2-lifecycle-manager -y &&
 sudo apt install ros-humble-nav2-map-server -y
 
 mam_f1tenth_gym_ros
-pip install -r src/requirements.txt
+pip install -r src/f1tenth_gym_ros/requirements.txt
 ```
 </br>
 
