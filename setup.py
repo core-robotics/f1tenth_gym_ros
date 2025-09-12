@@ -4,6 +4,15 @@ from glob import glob
 
 package_name = 'f1tenth_gym_ros'
 
+def get_map_data_files():
+    map_files = []
+    for root, dirs, files in os.walk('maps'):
+        for file in files:
+            full_path = os.path.join(root, file)
+            install_path = os.path.join('share', package_name, root)
+            map_files.append((install_path, [full_path]))
+    return map_files
+
 setup(
     name=package_name,
     version='0.0.0',
@@ -16,7 +25,7 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob('launch/*.xacro')),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.rviz')),
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
-    ],
+    ] + get_map_data_files(),
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Billy Zheng',

@@ -57,7 +57,7 @@ def generate_launch_description():
     )
 
     # Create custom yaml file for map server by copying the original yaml file and scaling the resolution by the sim.yaml scale
-    with open(config_dict['bridge']['ros__parameters']['map_path'] + '.yaml', 'r') as file:
+    with open(os.path.join(get_package_share_directory('f1tenth_gym_ros'), 'maps', config_dict['bridge']['ros__parameters']['map_name'], config_dict['bridge']['ros__parameters']['map_name']) + '.yaml', 'r') as file:
         map_yaml = yaml.safe_load(file)
     map_yaml['resolution'] *= config_dict['bridge']['ros__parameters']['scale']
     origin = map_yaml['origin']
@@ -84,7 +84,7 @@ def generate_launch_description():
         yaml.dump(map_yaml, file)
 
     # Copy the map image to the temporary directory
-    map_image_path = os.path.join(config_dict['bridge']['ros__parameters']['map_path'] + config_dict['bridge']['ros__parameters']['map_img_ext'])
+    map_image_path = os.path.join(get_package_share_directory('f1tenth_gym_ros'), 'maps', config_dict['bridge']['ros__parameters']['map_name'], config_dict['bridge']['ros__parameters']['map_name'] + config_dict['bridge']['ros__parameters']['map_img_ext'])
     with open(temp_img_path, 'wb') as file:
         with open(map_image_path, 'rb') as img_file:
             file.write(img_file.read())
