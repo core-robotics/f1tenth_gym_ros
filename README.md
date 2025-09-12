@@ -1,7 +1,7 @@
 ## Start with mamba (conda)
 ```bash
 mamba env create -n f1tenth_gym_ros python=3.10
-echo alias mam_f1tenth_gym_ros='cd ~/<your_workspace> && mamba activate f1tenth_gym_ros && export PYTHONPATH="/home/<your_name>/miniforge3/envs/f1tenth_gym_ros/lib/python3.10/site-packages:$PYTHONPATH" && export PYTHONPATH=$PYTHONPATH:/home/<your_name>/<your_workspace>/src/f1tenth_gym' >> ~/.bashrc
+echo 'alias mam_f1tenth_gym_ros='\''cd ~/<your_workspace> && mamba activate f1tenth_gym_ros && export PYTHONPATH="/home/<your_name>/miniforge3/envs/f1tenth_gym_ros/lib/python3.10/site-packages:$PYTHONPATH" && export PYTHONPATH=$PYTHONPATH:/home/<your_name>/<your_workspace>/src/f1tenth_gym'\''' >> ~/.bashrc
 ```
 </br>
 
