@@ -43,7 +43,7 @@ bridge:
 
     # map parameters
     # Austin  berlin  levinelobby_track  porto  icra2025  iccas2024  iv2024
-    map_path: '/home/a/f1tenth_gym_ros/src/f1tenth_gym_ros/maps/icra2025/icra2025'
+    map_name: 'icra2025'
     map_img_ext: '.pgm'
 
     # car parameters and scale

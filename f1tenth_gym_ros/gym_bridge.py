@@ -44,43 +44,43 @@ from transforms3d import euler
 
 import pathlib
 from f1tenth_gym.envs.f110_env import F110Env, Track
-
+from ament_index_python.packages import get_package_share_directory
 import time
 class GymBridge(Node):
     def __init__(self):
         super().__init__('gym_bridge')
 
-        self.declare_parameter('ego_namespace')
-        self.declare_parameter('ego_odom_topic')
-        self.declare_parameter('ego_opp_odom_topic')
-        self.declare_parameter('ego_scan_topic')
-        self.declare_parameter('ego_drive_topic')
-        self.declare_parameter('opp_namespace')
-        self.declare_parameter('opp_odom_topic')
-        self.declare_parameter('opp_ego_odom_topic')
-        self.declare_parameter('opp_scan_topic')
-        self.declare_parameter('opp_drive_topic')
-        self.declare_parameter('scan_distance_to_base_link')
-        self.declare_parameter('scan_fov')
-        self.declare_parameter('scan_beams')
-        self.declare_parameter('map_path')
-        self.declare_parameter('map_img_ext')
-        self.declare_parameter('num_agent')
-        self.declare_parameter('sx')
-        self.declare_parameter('sy')
-        self.declare_parameter('stheta')
-        self.declare_parameter('sx1')
-        self.declare_parameter('sy1')
-        self.declare_parameter('stheta1')
-        self.declare_parameter('kb_teleop')
-        self.declare_parameter('scale')
-        self.declare_parameter('vehicle_params')
+        self.declare_parameter('ego_namespace', '')
+        self.declare_parameter('ego_odom_topic', '')
+        self.declare_parameter('ego_opp_odom_topic', '')
+        self.declare_parameter('ego_scan_topic', '')
+        self.declare_parameter('ego_drive_topic', '')
+        self.declare_parameter('opp_namespace', '')
+        self.declare_parameter('opp_odom_topic', '')
+        self.declare_parameter('opp_ego_odom_topic', '')
+        self.declare_parameter('opp_scan_topic', '')
+        self.declare_parameter('opp_drive_topic', '')
+        self.declare_parameter('scan_distance_to_base_link', 0.0)
+        self.declare_parameter('scan_fov', 0.0)
+        self.declare_parameter('scan_beams', 0)
+        self.declare_parameter('map_name', '')
+        self.declare_parameter('map_img_ext', '')
+        self.declare_parameter('num_agent', 0)
+        self.declare_parameter('sx', 0.0)
+        self.declare_parameter('sy', 0.0)
+        self.declare_parameter('stheta', 0.0)
+        self.declare_parameter('sx1', 0.0)
+        self.declare_parameter('sy1', 0.0)
+        self.declare_parameter('stheta1', 0.0)
+        self.declare_parameter('kb_teleop', False)
+        self.declare_parameter('scale', 0.0)
+        self.declare_parameter('vehicle_params', '')
 
-        self.declare_parameter('drive_with_accel')
+        self.declare_parameter('drive_with_accel', False)
 
         # Flag to know whether to publish the sim time or not
         # Has to be different than use_sim_time so we can still use real time to trigger timer callbacks
-        self.declare_parameter('use_sim_time_bridge')
+        self.declare_parameter('use_sim_time_bridge', False)
 
         # check num_agents
         num_agents = self.get_parameter('num_agent').value
@@ -102,10 +102,10 @@ class GymBridge(Node):
         scale = self.get_parameter('scale').value
 
         # Split the path and the name
-        path = self.get_parameter('map_path').value
-        name = path.split('/')[-1].split('.')[0]
-        path = path + '.yaml'
-        self.get_logger().info('Loading map: %s from path: %s' % (name, path))
+        map_name = self.get_parameter('map_name').value
+        pkg_path = get_package_share_directory('f1tenth_gym_ros')
+        path = f'{pkg_path}/maps/{map_name}/{map_name}.yaml'
+        self.get_logger().info('Loading map: %s from path: %s' % (map_name, path))
 
         # Load the yaml file
         path = pathlib.Path(path)
@@ -571,7 +571,6 @@ class GymBridge(Node):
     def _publish_laser_transforms(self, ts):
         ego_scan_ts = TransformStamped()
         ego_scan_ts.transform.translation.x = self.scan_distance_to_base_link
-        # ego_scan_ts.transform.translation.z = 0.04+0.1+0.025
         ego_scan_ts.transform.rotation.w = 1.
         ego_scan_ts.header.stamp = ts
         ego_scan_ts.header.frame_id = self.ego_namespace + '/base_link'
