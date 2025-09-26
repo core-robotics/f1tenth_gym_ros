@@ -42,8 +42,8 @@ bridge:
     scan_beams: 1080
 
     # map parameters
-    # Austin  berlin  levinelobby_track  porto  icra2025  iccas2024  iv2024
-    map_name: 'icra2025'
+    # Austin  berlin  levinelobby_track  porto  icra2025  iccas2024  iv2024  map7
+    map_name: 'map7'
     map_img_ext: '.pgm'
 
     # car parameters and scale
