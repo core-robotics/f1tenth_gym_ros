@@ -43,8 +43,6 @@ import numpy as np
 from transforms3d import euler
 
 import pathlib
-import sys
-sys.path.append('/home/a/f1tenth_gym_ros/src/f1tenth_gym/')
 from f1tenth_gym.envs.f110_env import F110Env, Track
 
 import time
@@ -77,7 +75,6 @@ class GymBridge(Node):
         self.declare_parameter('kb_teleop')
         self.declare_parameter('scale')
         self.declare_parameter('vehicle_params')
-        self.declare_parameter('restart_simulation')
 
         self.declare_parameter('drive_with_accel')
 
@@ -109,13 +106,10 @@ class GymBridge(Node):
         name = path.split('/')[-1].split('.')[0]
         path = path + '.yaml'
         self.get_logger().info('Loading map: %s from path: %s' % (name, path))
-        
-        
 
         # Load the yaml file
         path = pathlib.Path(path)
         loaded_map = Track.from_track_path(path, scale)
-        self.loaded_map = loaded_map
 
         self.drive_with_accel = self.get_parameter('drive_with_accel').value
         # env backend
@@ -183,25 +177,13 @@ class GymBridge(Node):
             sy1 = self.get_parameter('sy1').value
             stheta1 = self.get_parameter('stheta1').value
 
-            # map 7
-            # loaded_map.centerline.sx, loaded_map.centerline.sy, loaded_map.centerline.stheta
-            # poses = np.zeros((len(loaded_map.centerline.xs), 3))
-            # poses[:, 0] = loaded_map.centerline.xs
-            # poses[:, 1] = loaded_map.centerline.ys
-            # poses[:, 2] = loaded_map.centerline.yaws
-            poses = self.select_init_poses()
-
-            options = {"poses": poses}
-
-            # options = {"poses": np.array([[sx, sy, stheta], [sx1, sy1, stheta1]])}
-
             # levinelobby
-            # sx = 1.31628
-            # sy = 1.02453
-            # stheta = -2.04863
-            # sx1 = 0.58487
-            # sy1 = -0.526965
-            # stheta1 = -1.70919
+            sx = 1.31628
+            sy = 1.02453
+            stheta = -2.04863
+            sx1 = 0.58487
+            sy1 = -0.526965
+            stheta1 = -1.70919
             # porto
             # sx = -1.61700
             # sy = -0.58429
@@ -224,7 +206,7 @@ class GymBridge(Node):
             self.opp_requested_accel = 0.0
             self.opp_steer = 0.0
             self.opp_collision = False
-            self.obs, _ = self.env.reset(options=options)
+            self.obs, _ = self.env.reset(options={"poses": np.array([[sx, sy, stheta], [sx1, sy1, stheta1]])})
             self.ego_scan = list(self.obs['scans'][0])
             self.opp_scan = list(self.obs['scans'][1])
 
@@ -243,7 +225,6 @@ class GymBridge(Node):
         self.drive_timer = self.create_timer(0.01, self.drive_timer_callback)
         # topic publishing timer
         self.timer = self.create_timer(0.01, self.timer_callback)
-        self.start_time = time.time()
 
         # transform broadcaster
         self.br = TransformBroadcaster(self)
@@ -251,7 +232,6 @@ class GymBridge(Node):
         # publishers
         self.ego_scan_pub = self.create_publisher(LaserScan, ego_scan_topic, 1)
         self.ego_odom_pub = self.create_publisher(Odometry, ego_odom_topic, 1)
-        self.collision_pub = self.create_publisher(Bool, '/collision0', 1)
         self.ego_drive_published = False
         if num_agents == 2:
             self.opp_scan_pub = self.create_publisher(LaserScan, opp_scan_topic, 1)
@@ -312,17 +292,6 @@ class GymBridge(Node):
             self.pause_callback,
             10)
 
-    def select_init_poses(self):
-        random_idx = np.random.randint(0, len(self.loaded_map.centerline.xs))
-        poses = np.zeros((2, 3))
-        poses[0, 0] = self.loaded_map.centerline.xs[random_idx]
-        poses[0, 1] = self.loaded_map.centerline.ys[random_idx]
-        poses[0, 2] = self.loaded_map.centerline.yaws[random_idx]
-        poses[1, 0] = self.loaded_map.centerline.xs[(random_idx + len(self.loaded_map.centerline.xs)//2) % len(self.loaded_map.centerline.xs)]
-        poses[1, 1] = self.loaded_map.centerline.ys[(random_idx + len(self.loaded_map.centerline.xs)//2) % len(self.loaded_map.centerline.xs)]
-        poses[1, 2] = self.loaded_map.centerline.yaws[(random_idx + len(self.loaded_map.centerline.xs)//2) % len(self.loaded_map.centerline.xs)]
-
-        return poses
     def pause_callback(self, msg):
         self.sim_paused = msg.data
         self.get_logger().info(f"Simulation {'paused' if self.sim_paused else 'resumed'}")
@@ -416,22 +385,6 @@ class GymBridge(Node):
                 self.obs, _, self.done, _, _ = self.env.step(np.array([[self.ego_steer, self.ego_requested_speed], [self.opp_steer, self.opp_requested_speed]]))
 
         self._update_sim_state()
-        if self.get_parameter('restart_simulation').value:
-            curr_time = time.time() - self.start_time
-            is_close_each_agents = False
-            dis_thre = 0.7
-            dis = np.sqrt((self.ego_pose[0] - self.opp_pose[0])**2 + (self.ego_pose[1] - self.opp_pose[1])**2)
-            if dis < dis_thre:
-                is_close_each_agents = True
-            if(self.env.collisions.any() == True and not is_close_each_agents or curr_time > 35):
-                poses = self.select_init_poses()
-                options = {"poses": poses}
-                self.env.reset(options=options)
-                self._publish_collision_flag(True)
-                self.start_time = time.time()
-            else:
-                self._publish_collision_flag(False)
-            
         if self.get_parameter('use_sim_time_bridge').value:
             clock_msg = Clock()
             clock_msg.clock.sec = int(self.env.current_time // 1.0)
@@ -512,13 +465,6 @@ class GymBridge(Node):
         self.ego_speed[0] = float(self.obs['linear_vels_x'][0])
         self.ego_speed[1] = float(self.obs['linear_vels_y'][0])
         self.ego_speed[2] = float(self.obs['ang_vels_z'][0])
-
-    def _publish_collision_flag(self, collision_flag):
-
-        collision_msg = Bool()
-        collision_msg.data = collision_flag
-        
-        self.collision_pub.publish(collision_msg)
 
     def _publish_odom(self, ts):
         ego_odom = Odometry()
