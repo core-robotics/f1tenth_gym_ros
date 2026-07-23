@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ROS2 Launch: gym_bridge_launch.py",
+      "type": "ros",
+      "request": "launch",
+      "target": "${workspaceFolder}/src/f1tenth_gym_ros/launch/gym_bridge_launch.py",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "colcon: build (symlink)",
+      // "env": {
+      //   "ROS_DISTRO": "foxy",
+      //   "AMENT_PREFIX_PATH": "${workspaceFolder}/install:${env:AMENT_PREFIX_PATH}",
+      //   "COLCON_CURRENT_PREFIX": "${workspaceFolder}/install",
+      //   "ROS_PACKAGE_PATH": "${workspaceFolder}/install/f1tenth_gym_ros/share:${env:ROS_PACKAGE_PATH}",
+      //   "LD_LIBRARY_PATH": "${workspaceFolder}/install/f1tenth_gym_ros/lib/forcespro_solver_node:${workspaceFolder}/install/forcespro_solver_node/lib:${env:LD_LIBRARY_PATH}"
+      // }
+    }
+  ]
+}
